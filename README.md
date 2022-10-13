@@ -18,9 +18,9 @@
 - **Compositor**                   : picom
 - **Editor**                       : nvim, vim
 
-## Setup instructios
-### Raspberry Pi OS light
-- Installation and initial setup
+## System Requirements
+ - Raspberry Pi OS light
+ - Installation and initial setup
 
 ### Overclock Raspberry pi
 ```
