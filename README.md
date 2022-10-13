@@ -20,7 +20,7 @@
 
 ## System Requirements
  - Raspberry Pi OS light
- - Installation and initial setup
+## Installation and initial setup
 
 ### Overclock Raspberry pi
 ```
