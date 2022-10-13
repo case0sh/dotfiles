@@ -1,4 +1,6 @@
-# Portable Deka 
+# Portable deka 
+
+![screenshot](screenshot.png)
 
 ## Details about my setup:
 - **Hardware**                     : Raspberry pi 4B 8GB
@@ -16,8 +18,6 @@
 - **Compositor**                   : picom
 - **Editor**                       : nvim, vim
 
-![screenshot](screenshot.png)
-
 ## Setup instructios
 ### Raspberry Pi OS light
 - Installation and initial setup
@@ -32,7 +32,6 @@ gpu_freq=650
 `sh pkg-install.sh` - utiles and tools for system
 
 ### Portability tools
-
 - [sshrc](https://github.com/cdown/sshrc)
 - [PiKISS](https://github.com/jmcerrejon/PiKISS)
 - [rpi-usb-gadget](https://github.com/kmpm/rpi-usb-gadget)
