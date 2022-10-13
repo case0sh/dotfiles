@@ -1,0 +1,239 @@
+# Clear
+
+alias c="clear"
+alias cl="clear"
+alias ckear="clear"
+alias clr="clear"
+
+# Change Directories
+
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias .....="cd ../../../.."
+alias ......="cd ../../../../.."
+
+# Vim
+export VIMINIT="let \$MYVIMRC='$SSHHOME/.sshrc.d/.vimrc' | source \$MYVIMRC"
+
+# Tmux
+tmuxrc() {
+    local TMUXDIR=~/.config/tmux
+    if ! [ -d $TMUXDIR ]; then
+        rm -rf $TMUXDIR
+        mkdir -p $TMUXDIR
+    fi
+    rm -rf $TMUXDIR/.sshrc.d
+    cp -r $SSHHOME/.sshrc $SSHHOME/bashsshrc $SSHHOME/sshrc $SSHHOME/.sshrc.d $TMUXDIR
+    SSHHOME=$TMUXDIR SHELL=$TMUXDIR/bashsshrc /usr/bin/tmux -S $TMUXDIR/tmuxserver $@
+}
+export SHELL=`which bash`
+
+# Automatically do an ls after each cd
+cd() {
+  if [ -n "$1" ]; then
+    builtin cd "$@" && ls --group-directories-first -al
+  else
+    builtin cd ~ && ls --group-directories-first -al
+  fi
+}
+
+#============================================================= 
+# cd & ls in one :- when you cd to a directory the ls command 
+# automatically lists it's contents however you have configred 
+# ls to do so:
+#-------------------------------------------------------------
+
+cl() {
+if [ -d "$1" ]; then
+   cd "$1"
+   ls -la --group-directories-first --time-style=+"%d.%m.%Y %H:%M" --color=auto -F   
+   else
+   echo "bash: cl: '$1': Directory not found"
+fi
+}
+
+#=============================================================
+# cd & ls & more in the same command. Pipes the output to more 
+#for use with directories with many files in their contents:
+#-------------------------------------------------------------
+
+# cd and ls & more in one
+cm() {
+if [ -d "$1" ]; then
+   cd "$1"
+   ls | more
+   else
+   echo "bash: cl: '$1': Directory not found"
+fi
+}
+
+# Estimate file space usage to maximum depth
+
+alias du1="du -d 1"
+
+# History commands
+
+alias h="history"
+alias h1="history 10"
+alias h2="history 20"
+alias h3="history 30"
+alias hgrep='history | grep'
+
+# List commands
+
+alias l='ls -lAh'
+alias ls="ls -a"
+alias la="ls -a"
+alias ll="ls -al"
+
+# Ping Commands
+
+alias pg="ping google.com -c 5"
+alias pf="ping facebook.com -c 5"
+alias ping="ping -c 5"
+alias fastping="ping -c 100 -s.2"
+
+# Confirmation
+
+alias rm='rm -Iv --preserve-root'
+alias mv='mv -iv'
+alias cp='cp -iv'
+alias ln='ln -i'
+alias chown='chown --preserve-root'
+alias chmod='chmod --preserve-root'
+alias chgrp='chgrp --preserve-root'
+
+# Create a new directory and enter it
+
+function mkd() {
+    mkdir -p "$@" && cd "$@"
+  }
+
+# Install & Update utilties
+
+alias sai="sudo apt install"
+alias sai="sudo apt-get install"
+alias sau="sudo apt update"
+alias sau="sudo apt-get update"
+alias update="sudo apt update"
+alias update="yum update"
+alias updatey="yum -y update"
+
+# System state
+
+alias reboot="sudo /sbin/reboot"
+alias poweroff="sudo /sbin/poweroff"
+alias halt="sudo /sbin/halt"
+alias shutdown="sudo /sbin/shutdown"
+alias flighton='sudo rfkill block all'
+alias flightoff='sudo rfkill unblock all'
+alias snr='sudo service network-manager restart'
+
+# Show open ports
+
+alias ports='sudo netstat -tulanp'
+
+# Free and Used
+
+alias meminfo="free -m -l -t"
+
+# Get top process eating memory
+
+alias psmem="ps auxf | sort -nr -k 4"
+alias psmem10="ps auxf | sort -nr -k 4 | head -10"
+
+# Get top process eating cpu
+
+alias pscpu="ps auxf | sort -nr -k 3"
+alias pscpu10="ps auxf | sort -nr -k 3 | head -10"
+
+# Get details of a process
+
+alias paux='ps aux | grep'
+
+# Get server cpu info
+
+alias cpuinfo="lscpu"
+
+# Resume wget by default
+
+alias wget="wget -c"
+
+# Grabs the disk usage in the current directory
+
+alias usage='du -ch | grep total'
+
+# Gets the total disk usage on your machine
+
+alias totalusage='df -hl --total | grep total'
+
+# Shows the individual partition usages without the temporary memory values
+
+alias partusage='df -hlT --exclude-type=tmpfs --exclude-type=devtmpfs'
+
+# Gives you what is using the most space. Both directories and files. Varies on current directory
+
+alias most='du -hsx * | sort -rh | head -10'
+
+#functions
+
+function extract () {
+        if [ -f $1 ] ; then
+                case $1 in
+                        *.tar.bz2)        tar xjf $1                ;;
+                        *.tar.gz)        tar xzf $1                ;;
+                        *.bz2)                bunzip2 $1                ;;
+                        *.rar)                unrar x $1                ;;
+                        *.gz)                gunzip $1                ;;
+                        *.tar)                tar xf $1                ;;
+                        *.tbz2)                tar xjf $1                ;;
+                        *.tgz)                tar xzf $1                ;;
+                        *.zip)                unzip $1                ;;
+                        *.Z)                uncompress $1        ;;
+                        *)                        echo "'$1' cannot be extracted via extract()" ;;
+                esac
+        else
+                echo "'$1' is not a valid file"
+        fi
+}
+
+#trash
+
+function trash(){
+	if [ -z "$*" ] ; then
+		echo "Usage: trash filename"
+	else
+		DATE=$( date +%F )
+		[ -d "${HOME}/.Trash/${DATE}" ] || mkdir -p ${HOME}/.Trash/${DATE}
+		for FILE in $@ ; do
+			mv "${FILE}" "${HOME}/.Trash/${DATE}"
+			echo "${FILE} trashed!"
+		done
+	fi
+}
+
+# find - exclude svn, git, mercurial, repo, eclipse and intellij idea directories
+# usage : f [directory] [find-options]
+f(){
+  dir=$1
+  shift
+  find $dir -type d \( -name .svn -o -name .git -o -name .hg -o -name .repo -o -name .metadata -o -name .idea \) -prune -o $@ -print
+}
+
+pause() { 
+	if $(killall -STOP "$1"); then 
+		echo "[+] $1 successfully paused!"
+	else 
+		echo "[-] Failed to pause $1"
+	fi 
+}
+ 
+unpause() { 
+	if $(killall -CONT "$1"); then 
+		echo "[+] $1 successfully unpaused!" 
+	else 
+		echo "[-] Failed to unpause $1" 
+	fi 
+}
+export PS1="\[\033[38;5;99m\][\[$(tput sgr0)\]\[\033[38;5;93m\]\A]\[$(tput sgr0)\]\[\033[38;5;160m\]\u\[$(tput sgr0)\]\[\033[38;5;33m\]@\[$(tput sgr0)\]\[\033[38;5;214m\]\h\[$(tput sgr0)\]:\[$(tput sgr0)\]\[\033[38;5;51m\]{\[$(tput sgr0)\]\[\033[38;5;6m\]\w\[$(tput sgr0)\]\[\033[38;5;51m\]}\[$(tput sgr0)\]\n\[$(tput sgr0)\]\[\033[38;5;99m\]:\[$(tput sgr0)\]\[\033[38;5;105m\]\\$\[$(tput sgr0)\] \[$(tput sgr0)\]"

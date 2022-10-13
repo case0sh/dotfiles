@@ -1,0 +1,108 @@
+#!/bin/bash
+
+HOSTNAME=$(hostname -s)
+IP=$(hostname -I | awk '{print $1}')
+IP2=$(curl ifconfig.me/ip)
+#EXT_IP=$(curl -s ipinfo.io/ip)
+#EXT_IP=${EXT_IP:-None}
+
+#IP=$(getent hosts $(hostname -s) | awk '{print $1}')
+KERNEL=$(uname -r)
+
+#OS distro
+if [ -f /etc/debian_version ]; then
+        OS_VERSION=$(lsb_release -ds)
+elif [ -f /etc/oracle-release ]; then
+        OS_VERSION=$(cat /etc/oracle-release)
+elif [ -f /etc/redhat-release ]; then
+        OS_VERSION=$(cat /etc/redhat-release)
+elif [ -f /etc/os-release ]; then
+        OS_VERSION=$(grep PRETTY_NAME /etc/os-release | awk -F '"' '{print $2}')
+else
+        OS_VERSION='Unrecognized Linux distribution'
+fi
+# public ip
+CPU_COUNT=$(lscpu | grep ^'CPU(s)' | awk -F ': ' {'print $2'} | xargs)
+CPU_VENDOR=$(lscpu | grep ^'Vendor ID' | awk -F ': ' {'print $2'} | xargs)
+CPU_MODEL=$(lscpu | grep ^'Model name' | awk -F ': ' {'print $2'} | xargs)
+MEMORY=$(free -h | grep "Mem" | awk '{print $2,"-",$3,"-",$4}')
+SWAP=$(free -h | grep "Swap" | awk '{print $2,"-",$3,"-",$4}')
+PSA=$(ps -Afl | wc -l)
+ZOMBIE=$(pgrep defunct | wc -l)
+
+#System load
+LOAD1=$(awk '{print $1}' < /proc/loadavg)
+LOAD5=$(awk '{print $2}' < /proc/loadavg)
+LOAD15=$(awk '{print $3}' < /proc/loadavg)
+
+#System uptime
+uptime=$(cut -f1 -d. < /proc/uptime)
+upDays=$((uptime/60/60/24))
+upHours=$((uptime/60/60%24))
+upMins=$((uptime/60%60))
+upSecs=$((uptime%60))
+
+# the "tr" command is to suppress the "warning: command substitution: ignored null byte in input" errors
+PI_REVISION=$(cat /proc/device-tree/model | tr '\0' '\n')
+PI_TEMP=$(vcgencmd measure_temp | awk -F'=' '{ print $2 }')
+
+
+#file systems
+#ROOT_LV=$(df -Ph | grep " /$" | awk '{print $4,"-",$5}' | tr -d '\n')
+ROOT_LV=$(df -Ph | grep " /$" | awk '{print $4,"-",$5}'  )
+#OPT_LV=$(df -Ph | grep " /home$" | awk '{print $4,"-",$5}' | tr -d '\n')
+OPT_LV=$(df -Ph | grep " /home$" | awk '{print $4,"-",$5}' )
+
+DOCKER_SVC=$(systemctl status docker | grep 'Active:' | awk '{ print $2 }')
+
+#---------------------------------------------------------------------------#
+
+COLOR_COLUMN="\e[1m-"
+COLOR_VALUE="\e[01;36m"
+#COLOR_VALUE="\e[31m"
+RESET_COLORS="\e[0m"
+
+echo -e "
+==============================================================================
+ ${COLOR_COLUMN}- Hostname${RESET_COLORS}...........: ${COLOR_VALUE} ${HOSTNAME} ${RESET_COLORS}
+ ${COLOR_COLUMN}- OS version${RESET_COLORS}.........: ${COLOR_VALUE} ${OS_VERSION} ${RESET_COLORS}
+ ${COLOR_COLUMN}- Kernel release${RESET_COLORS}.....: ${COLOR_VALUE} ${KERNEL} ${RESET_COLORS}
+ ${COLOR_COLUMN}- Users${RESET_COLORS}..............: ${COLOR_VALUE} Currently $(users | wc -w) user(s) logged on ${RESET_COLORS}
+==============================================================================
+ ${COLOR_COLUMN}- CPUs${RESET_COLORS}...............: ${COLOR_VALUE} ${CPU_COUNT} x ${CPU_VENDOR}/${CPU_MODEL} ${RESET_COLORS}
+ ${COLOR_COLUMN}- Load average${RESET_COLORS}.......: ${COLOR_VALUE} ${LOAD1} - ${LOAD5} - ${LOAD15} (1-5-15 min) ${RESET_COLORS}
+ ${COLOR_COLUMN}- Memory${RESET_COLORS}.............: ${COLOR_VALUE} ${MEMORY} (total-used-free) ${RESET_COLORS}
+ ${COLOR_COLUMN}- Swap${RESET_COLORS}...............: ${COLOR_VALUE} ${SWAP} (total-used-free) ${RESET_COLORS}
+ ${COLOR_COLUMN}- Processes${RESET_COLORS}..........: ${COLOR_VALUE} ${PSA} running - ${ZOMBIE} zombies ${RESET_COLORS}
+ ${COLOR_COLUMN}- System uptime${RESET_COLORS}......: ${COLOR_VALUE} ${upDays} days ${upHours} hours ${upMins} minutes ${upSecs} seconds ${RESET_COLORS}"
+echo -e "===== NETWORK ================================================================
+ ${COLOR_COLUMN}- Local IP${RESET_COLORS}...........: ${COLOR_VALUE} ${IP} ${RESET_COLORS}
+ ${COLOR_COLUMN}- External IP${RESET_COLORS}........: ${COLOR_VALUE} ${IP2} ${RESET_COLORS}"
+echo -e "===== PI INFO ================================================================
+ ${COLOR_COLUMN}- Revision${RESET_COLORS}...........: ${COLOR_VALUE} ${PI_REVISION} ${RESET_COLORS}
+ ${COLOR_COLUMN}- Temperature${RESET_COLORS}........: ${COLOR_VALUE} ${PI_TEMP} ${RESET_COLORS}"
+echo -e "===== FILESYSTEM =============================================================
+ $COLOR_COLUMN- /$RESET_COLORS..................: $COLOR_VALUE ${ROOT_LV} (avail-use%) $RESET_COLORS
+ $COLOR_COLUMN- /home$RESET_COLORS..............: $COLOR_VALUE ${OPT_LV} (avail-use%) $RESET_COLORS"
+echo -e "===== SERVICES ===============================================================
+ $COLOR_COLUMN- docker$RESET_COLORS.............: $COLOR_VALUE ${DOCKER_SVC}$RESET_COLORS"
+echo '=============================================================================='
+echo ''
+
+#
+echo "⠄⠄⠄⢰⣧⣼⣯⠄⣸⣠⣶⣶⣦⣾⠄⠄⠄⠄⡀⠄⢀⣿⣿⠄⠄⠄⢸⡇⠄⠄"
+echo "⠄⠄⠄⣾⣿⠿⠿⠶⠿⢿⣿⣿⣿⣿⣦⣤⣄⢀⡅⢠⣾⣛⡉⠄⠄⠄⠸⢀⣿⠄"
+echo "⠄⠄⢀⡋⣡⣴⣶⣶⡀⠄⠄⠙⢿⣿⣿⣿⣿⣿⣴⣿⣿⣿⢃⣤⣄⣀⣥⣿⣿⠄"
+echo "⠄⠄⢸⣇⠻⣿⣿⣿⣧⣀⢀⣠⡌⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠿⣿⣿⣿⠄"
+echo "⠄⢀⢸⣿⣷⣤⣤⣤⣬⣙⣛⢿⣿⣿⣿⣿⣿⣿⡿⣿⣿⡍⠄⠄⢀⣤⣄⠉⠋⣰"
+echo "⠄⣼⣖⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⢇⣿⣿⡷⠶⠶⢿⣿⣿⠇⢀⣤"
+echo "⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣽⣿⣿⣿⡇⣿⣿⣿⣿⣿⣿⣷⣶⣥⣴⣿⡗"
+echo "⢀⠈⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠄"
+echo "⢸⣿⣦⣌⣛⣻⣿⣿⣧⠙⠛⠛⡭⠅⠒⠦⠭⣭⡻⣿⣿⣿⣿⣿⣿⣿⣿⡿⠃⠄"
+echo "⠘⣿⣿⣿⣿⣿⣿⣿⣿⡆⠄⠄⠄⠄⠄⠄⠄⠄⠹⠈⢋⣽⣿⣿⣿⣿⣵⣾⠃⠄"
+echo "⠄⠘⣿⣿⣿⣿⣿⣿⣿⣿⠄⣴⣿⣶⣄⠄⣴⣶⠄⢀⣾⣿⣿⣿⣿⣿⣿⠃⠄⠄"
+echo "⠄⠄⠈⠻⣿⣿⣿⣿⣿⣿⡄⢻⣿⣿⣿⠄⣿⣿⡀⣾⣿⣿⣿⣿⣛⠛⠁⠄⠄⠄"
+echo "⠄⠄⠄⠄⠈⠛⢿⣿⣿⣿⠁⠞⢿⣿⣿⡄⢿⣿⡇⣸⣿⣿⠿⠛⠁⠄⠄⠄⠄⠄"
+echo "⠄⠄⠄⠄⠄⠄⠄⠉⠻⣿⣿⣾⣦⡙⠻⣷⣾⣿⠃⠿⠋⠁⠄⠄⠄⠄⠄⢀⣠⣴"
+echo "⣿⣿⣿⣶⣶⣮⣥⣒⠲⢮⣝⡿⣿⣿⡆⣿⡿⠃⠄⠄⠄⠄⠄⠄⠄⣠⣴⣿⣿⣿"
+figlet "don't be evil"
